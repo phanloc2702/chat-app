@@ -7,6 +7,7 @@ import { Message } from '../entities/message.entity';
 import * as notificationService from './notification.service';
 import { NotificationType } from '../entities/notification.entity';
 import { getIo } from '../config/socket';
+import { invalidateConversationMembersCache } from './conversation-member-cache.service';
 
 const conversationRepository = AppDataSource.getRepository(Conversation);
 const conversationMemberRepository =
@@ -191,11 +192,13 @@ export const createPrivateConversation = async (
       lastReadAt: null,
     });
 
-    await queryRunner.manager.save([member1, member2]);
+   await queryRunner.manager.save([member1, member2]);
 
-    await queryRunner.commitTransaction();
+  await queryRunner.commitTransaction();
 
-    return getConversationDetailForUser(savedConversation.id, currentUserId);
+  await invalidateConversationMembersCache(savedConversation.id);
+
+  return getConversationDetailForUser(savedConversation.id, currentUserId);
   } catch (error) {
     await queryRunner.rollbackTransaction();
     throw error;
@@ -261,6 +264,8 @@ export const createGroupConversation = async (
     await queryRunner.manager.save(members);
 
     await queryRunner.commitTransaction();
+
+    await invalidateConversationMembersCache(savedConversation.id);
 
     const io = getIo();
 

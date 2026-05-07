@@ -57,6 +57,7 @@ services:
       MINIO_BUCKET: chat-images
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      REDIS_URL: redis://redis:6379
       MINIO_PUBLIC_ENDPOINT: minio.localhost
       MINIO_PUBLIC_PORT: 9000
     extra_hosts:
@@ -90,6 +91,7 @@ services:
       MINIO_BUCKET: chat-images
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      REDIS_URL: redis://redis:6379
       MINIO_PUBLIC_ENDPOINT: minio.localhost
       MINIO_PUBLIC_PORT: 9000
     extra_hosts:

@@ -3,6 +3,7 @@ import { Conversation } from '../entities/conversation.entity';
 import { ConversationMember } from '../entities/conversation-member.entity';
 import { Message, MessageType } from '../entities/message.entity';
 import { getPresignedImageUrl } from './file.service';
+import { getConversationMembersFromCacheOrDb } from './conversation-member-cache.service';
 
 const messageRepository = AppDataSource.getRepository(Message);
 const conversationRepository = AppDataSource.getRepository(Conversation);
@@ -91,14 +92,7 @@ const mapMessageResponse = async (message: Message & { sender?: any }) => {
 };
 
 export const getConversationMembers = async (conversationId: number) => {
-  const members = await conversationMemberRepository.find({
-    where: { conversationId },
-    relations: {
-      user: true,
-    },
-  });
-
-  return members.map((member) => member.user);
+  return getConversationMembersFromCacheOrDb(conversationId);
 };
 
 export const sendMessage = async (payload: {

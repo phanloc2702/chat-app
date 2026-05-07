@@ -6,14 +6,13 @@ import { AppDataSource } from './app/config/data-source';
 import { initSocket } from './app/config/socket';
 import { registerSocketHandlers } from './app/sockets';
 import { ensureMinioBucket } from './app/config/minio';
-
+import { connectRedis } from './app/config/redis';
 const startServer = async () => {
   try {
     await AppDataSource.initialize();
     console.log('PostgreSQL connected');
-
+    await connectRedis();
     await ensureMinioBucket();
-
     const server = http.createServer(app);
     const io = await initSocket(server);
 
