@@ -3,6 +3,8 @@ services:
     image: postgres:16
     container_name: chat-postgres
     restart: always
+    cpus: 4.0
+    mem_limit: 4g
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 123456
@@ -16,6 +18,8 @@ services:
     image: minio/minio
     container_name: chat-minio
     restart: always
+    cpus: 0.5
+    mem_limit: 512m
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: minioadmin
@@ -30,6 +34,8 @@ services:
     image: redis:7
     container_name: chat-redis
     restart: always
+    cpus: 0.5
+    mem_limit: 512m
     ports:
       - '6379:6379'
 
@@ -39,6 +45,8 @@ services:
       dockerfile: Dockerfile
     container_name: chat-api-1
     restart: always
+    cpus: 3.0
+    mem_limit: 1.5g
     environment:
       PORT: 3000
       DB_HOST: postgres
@@ -49,17 +57,22 @@ services:
       JWT_SECRET: super_secret_key
       JWT_EXPIRES_IN: 1d
       CLIENT_URL: http://localhost:4200
+
       MINIO_ENDPOINT: minio
       MINIO_PORT: 9000
       MINIO_USE_SSL: false
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
       MINIO_BUCKET: chat-images
+      MINIO_PUBLIC_ENDPOINT: minio.localhost
+      MINIO_PUBLIC_PORT: 9000
+
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_URL: redis://redis:6379
-      MINIO_PUBLIC_ENDPOINT: minio.localhost
-      MINIO_PUBLIC_PORT: 9000
+      DB_POOL_MAX: 30
+      DB_CONNECTION_TIMEOUT_MS: 5000
+      DB_IDLE_TIMEOUT_MS: 30000
     extra_hosts:
       - "minio.localhost:host-gateway"
     depends_on:
@@ -73,6 +86,8 @@ services:
       dockerfile: Dockerfile
     container_name: chat-api-2
     restart: always
+    cpus: 3.0
+    mem_limit: 1.5g
     environment:
       PORT: 3000
       DB_HOST: postgres
@@ -83,17 +98,22 @@ services:
       JWT_SECRET: super_secret_key
       JWT_EXPIRES_IN: 1d
       CLIENT_URL: http://localhost:4200
+
       MINIO_ENDPOINT: minio
       MINIO_PORT: 9000
       MINIO_USE_SSL: false
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
       MINIO_BUCKET: chat-images
+      MINIO_PUBLIC_ENDPOINT: minio.localhost
+      MINIO_PUBLIC_PORT: 9000
+
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_URL: redis://redis:6379
-      MINIO_PUBLIC_ENDPOINT: minio.localhost
-      MINIO_PUBLIC_PORT: 9000
+      DB_POOL_MAX: 30
+      DB_CONNECTION_TIMEOUT_MS: 5000
+      DB_IDLE_TIMEOUT_MS: 30000
     extra_hosts:
       - "minio.localhost:host-gateway"
     depends_on:
@@ -105,6 +125,8 @@ services:
     image: nginx:alpine
     container_name: chat-nginx
     restart: always
+    cpus: 1.0
+    mem_limit: 512m
     ports:
       - '3000:80'
     volumes:

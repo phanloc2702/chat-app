@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { Conversation } from './conversation.entity';
 import { User } from './user.entity';
@@ -14,7 +15,11 @@ export enum MessageType {
   TEXT = 'text',
   IMAGE = 'image',
 }
-
+@Index('IDX_messages_conversation_created_at', [
+  'conversationId',
+  'createdAt',
+])
+@Index('IDX_messages_sender_id', ['senderId'])
 @Entity('messages')
 export class Message {
   @PrimaryGeneratedColumn()

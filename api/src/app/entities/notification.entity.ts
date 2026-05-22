@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Conversation } from './conversation.entity';
@@ -14,7 +15,8 @@ export enum NotificationType {
   ADDED_TO_GROUP = 'added_to_group',
   SYSTEM = 'system',
 }
-
+@Index('IDX_notifications_user_id', ['userId'])
+@Index('IDX_notifications_conversation_id', ['relatedConversationId'])
 @Entity('notifications')
 export class Notification {
   @PrimaryGeneratedColumn()

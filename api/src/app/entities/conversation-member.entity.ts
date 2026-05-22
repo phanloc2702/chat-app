@@ -6,12 +6,17 @@ import {
   JoinColumn,
   Column,
   Unique,
+  Index,
 } from 'typeorm';
 import { Conversation } from './conversation.entity';
 import { User } from './user.entity';
 
 @Entity('conversation_members')
 @Unique('UQ_conversation_user', ['conversationId', 'userId'])
+@Index('IDX_conversation_members_conversation_user', [
+  'conversationId',
+  'userId',
+])
 export class ConversationMember {
   @PrimaryGeneratedColumn()
   id!: number;

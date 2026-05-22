@@ -12,7 +12,7 @@ const conversationMemberRepository =
 
 const checkUserInConversation = async (
   conversationId: number,
-  userId: number
+  userId: number,
 ) => {
   const member = await conversationMemberRepository.findOne({
     where: {
@@ -26,7 +26,7 @@ const checkUserInConversation = async (
 
 const updateConversationLastMessage = async (
   conversationId: number,
-  message: Message
+  message: Message,
 ) => {
   await conversationRepository.update(conversationId, {
     lastMessageId: message.id,
@@ -34,32 +34,37 @@ const updateConversationLastMessage = async (
   });
 };
 
-const markSenderAsRead = async (conversationId: number, senderId: number) => {
-  const member = await conversationMemberRepository.findOne({
-    where: {
+/**
+ * Mark read đúng nghiệp vụ:
+ * - Không gọi khi user gửi message.
+ * - Chỉ gọi khi user mở/đọc conversation, ví dụ getMessagesByConversation.
+ */
+const markConversationAsRead = async (
+  conversationId: number,
+  userId: number,
+) => {
+  await conversationMemberRepository.update(
+    {
       conversationId,
-      userId: senderId,
+      userId,
     },
-  });
-
-  if (!member) return;
-
-  member.lastReadAt = new Date();
-
-  await conversationMemberRepository.save(member);
+    {
+      lastReadAt: new Date(),
+    },
+  );
 };
 
 const mapMessageResponse = async (message: Message & { sender?: any }) => {
   let imageUrl: string | null = null;
 
   if (message.messageType === MessageType.IMAGE && message.objectName) {
-     try {
+    try {
       imageUrl = await getPresignedImageUrl(message.objectName);
     } catch (error) {
       console.error(
         '[message] failed to create presigned image url:',
         message.objectName,
-        error
+        error,
       );
 
       imageUrl = null;
@@ -108,7 +113,7 @@ export const sendMessage = async (payload: {
 
   const isMember = await checkUserInConversation(
     payload.conversationId,
-    payload.senderId
+    payload.senderId,
   );
 
   if (!isMember) {
@@ -124,9 +129,17 @@ export const sendMessage = async (payload: {
 
   const savedMessage = await messageRepository.save(message);
 
+  /**
+   * Không update lastReadAt ở đây nữa.
+   * Gửi message chỉ cần:
+   * - tạo message
+   * - cập nhật lastMessage của conversation
+   */
   await updateConversationLastMessage(payload.conversationId, savedMessage);
-  await markSenderAsRead(payload.conversationId, payload.senderId);
 
+  /**
+   * Giữ nguyên response có sender đầy đủ để không ảnh hưởng FE.
+   */
   const fullMessage = await messageRepository.findOne({
     where: { id: savedMessage.id },
     relations: {
@@ -152,7 +165,7 @@ export const sendImageMessage = async (payload: {
 }) => {
   const isMember = await checkUserInConversation(
     payload.conversationId,
-    payload.senderId
+    payload.senderId,
   );
 
   if (!isMember) {
@@ -182,8 +195,11 @@ export const sendImageMessage = async (payload: {
 
   const savedMessage = await messageRepository.save(message);
 
+  /**
+   * Không update lastReadAt khi gửi ảnh.
+   * Mark read sẽ được xử lý khi user đọc conversation.
+   */
   await updateConversationLastMessage(payload.conversationId, savedMessage);
-  await markSenderAsRead(payload.conversationId, payload.senderId);
 
   const fullMessage = await messageRepository.findOne({
     where: { id: savedMessage.id },
@@ -201,7 +217,7 @@ export const sendImageMessage = async (payload: {
 
 export const getMessagesByConversation = async (
   conversationId: number,
-  currentUserId: number
+  currentUserId: number,
 ) => {
   const isMember = await checkUserInConversation(conversationId, currentUserId);
 
@@ -219,9 +235,15 @@ export const getMessagesByConversation = async (
     },
   });
 
+  /**
+   * User đã mở conversation để đọc messages,
+   * nên update lastReadAt tại đây là hợp lý hơn.
+   */
+  await markConversationAsRead(conversationId, currentUserId);
+
   return Promise.all(
     messages.map((message) =>
-      mapMessageResponse(message as Message & { sender?: any })
-    )
+      mapMessageResponse(message as Message & { sender?: any }),
+    ),
   );
 };
